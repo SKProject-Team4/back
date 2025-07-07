@@ -11,16 +11,18 @@ public class UserMapper {
         userDTO.setUsername(userEntity.getUsername());
         userDTO.setPassword(userEntity.getPassword());
         userDTO.setCreatedAt(userEntity.getCreatedAt());
+        userDTO.setRole(userEntity.getRole());
         return userDTO;
     }
 
-    public static UserEntity toUserEntity(UserDTO userDTO){
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(userDTO.getId());
-        userEntity.setEmail(userDTO.getEmail());
-        userEntity.setUsername(userDTO.getUsername());
-        userEntity.setPassword(userDTO.getPassword());
-        userEntity.setCreatedAt(userDTO.getCreatedAt());
-        return userEntity;
-    }
+//    public static UserEntity toUserEntity(UserDTO userDTO){
+//        UserEntity userEntity = new UserEntity();
+//        userEntity.setId(userDTO.getId());
+//        userEntity.setEmail(userDTO.getEmail());
+//        userEntity.setUsername(userDTO.getUsername());
+//        userEntity.setPassword(userDTO.getPassword());
+//        userEntity.setCreatedAt(userDTO.getCreatedAt());
+//        userEntity.setRule(userDTO.getRule());
+//        return userEntity;
+//    }
 }

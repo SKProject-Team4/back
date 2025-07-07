@@ -29,7 +29,9 @@ public class UserEntity {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
-    
-    // 테이블보고 엔티티 디티오 추가 mapper도
+
+    @Column
+    private String role;
+
 
 }

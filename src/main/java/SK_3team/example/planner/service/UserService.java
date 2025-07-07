@@ -4,6 +4,7 @@ import SK_3team.example.planner.dto.UserDTO;
 import SK_3team.example.planner.dto.mapper.UserMapper;
 import SK_3team.example.planner.entity.UserEntity;
 import SK_3team.example.planner.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
@@ -13,9 +14,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
     public final UserRepository userRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public void save(UserDTO userDTO){
-        UserEntity userEntity = UserMapper.toUserEntity(userDTO);
+
+    public void save(UserDTO userDTO) {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUsername(userDTO.getUsername());
+        userEntity.setEmail(userDTO.getEmail());
+        userEntity.setRole(userDTO.getRole());
+
+        userEntity.setPassword(bCryptPasswordEncoder.encode(userDTO.getPassword()));
 
         userRepository.save(userEntity);
     }

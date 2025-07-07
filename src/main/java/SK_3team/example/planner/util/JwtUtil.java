@@ -13,7 +13,6 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
-
     // application.properties에서 JWT Secret Key를 로드
     @Value("${jwt.secret.key}")
     private String secretKey;
@@ -29,6 +28,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
 
     // 토큰에서 사용자 ID 추출 (예시로 "userId" 클레임을 가정)
     public Long getUserIdFromToken(String token) {

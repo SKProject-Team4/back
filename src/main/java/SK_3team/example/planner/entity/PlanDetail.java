@@ -18,10 +18,11 @@ public class PlanDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ai_chat_content", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "ai_chat_content", columnDefinition = "TEXT", nullable = true)
     private String aiChatContent;
 
     @OneToOne(fetch = FetchType.LAZY)
+
     @JoinColumn(name = "plan_id", referencedColumnName = "id")
     private Plan plan;
 

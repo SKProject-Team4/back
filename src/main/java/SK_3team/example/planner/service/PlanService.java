@@ -1,10 +1,10 @@
 package SK_3team.example.planner.service;
 
 import SK_3team.example.planner.entity.Plan;
-import SK_3team.example.planner.entity.PlanDetail; // ⭐ 추가
+import SK_3team.example.planner.entity.PlanDetail;
 import SK_3team.example.planner.repository.PlanRepository;
 import SK_3team.example.planner.dto.PlanResponseDto;
-import SK_3team.example.planner.dto.PlanDetailResponseDto; // ⭐ 추가
+import SK_3team.example.planner.dto.PlanDetailResponseDto;
 import SK_3team.example.planner.dto.PlanRequestDto;
 import SK_3team.example.planner.exception.PlanNotFoundException;
 import SK_3team.example.planner.exception.AuthException;
@@ -42,14 +42,14 @@ public class PlanService {
                 .map(this::convertToPlanResponseDto)
                 .collect(Collectors.toList());
     }
-    //팝업창에 상세 내용을 보여줄때사용할메서드
-    public PlanDetailResponseDto getPlanDetailByIdForUser(Long planId, Long userId) {
+
+    public PlanDetailResponseDto getPlanDetailByIdForUser(Long planId, Long userId) { // 'convertToDto' 대신 명확하게 변경
         Plan plan = planRepository.findByIdAndUserId(planId, userId)
                 .orElseThrow(() -> new PlanNotFoundException("일정을 찾을 수 없습니다. (ID: " + planId + ", User: " + userId + ")"));
-        return convertToPlanDetailResponseDto(plan);
+        return convertToPlanDetailResponseDto(plan); // 상세 DTO 반환
     }
 
-    // 일정생성(로그인/게스트 모두사용가능)
+    // 일정 생성
     @Transactional
     public PlanResponseDto createPlan(PlanRequestDto requestDto, Long userId) {
         Plan plan = new Plan();
@@ -57,7 +57,7 @@ public class PlanService {
         plan.setStart(requestDto.getStart());
         plan.setEnd(requestDto.getEnd());
         plan.setCreatedAt(LocalDateTime.now());
-        plan.setUserId(userId);
+        plan.setUserId(userId); // 게스트의 경우 userId는 null
 
         PlanDetail planDetail = new PlanDetail();
         planDetail.setAiChatContent(requestDto.getAiChatContent());
@@ -66,13 +66,17 @@ public class PlanService {
         Plan savedPlan = planRepository.save(plan);
         return convertToPlanResponseDto(savedPlan);
     }
-    //일정 수정(로그인회원만가능)
+
+    // 일정 수정(로그인 회원만 가능)
     @Transactional
     public PlanResponseDto updatePlan(Long planId, PlanRequestDto requestDto, Long userId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new PlanNotFoundException("수정할 일정을 찾을 수 없습니다. (ID: " + planId + ")"));
 
-        if (plan.getUserId() == null || !plan.getUserId().equals(userId)) {
+        if (plan.getUserId() == null) {
+            throw new AuthException("게스트 일정은 수정할 수 없습니다.");
+        }
+        if (!plan.getUserId().equals(userId)) {
             throw new AuthException("해당 일정을 수정할 권한이 없습니다.");
         }
 
@@ -83,6 +87,7 @@ public class PlanService {
         if (plan.getPlanDetail() != null) {
             plan.getPlanDetail().setAiChatContent(requestDto.getAiChatContent());
         } else {
+            // PlanDetail이 없는 경우 새로 생성 (예외적인 상황일 수 있음)
             PlanDetail newDetail = new PlanDetail();
             newDetail.setAiChatContent(requestDto.getAiChatContent());
             plan.setPlanDetail(newDetail);
@@ -92,13 +97,16 @@ public class PlanService {
         return convertToPlanResponseDto(updatedPlan);
     }
 
-    //일정 삭제(로그인회원만가능)
+    // 일정 삭제(로그인 회원만 가능)
     @Transactional
     public void deletePlan(Long planId, Long userId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new PlanNotFoundException("삭제할 일정을 찾을 수 없습니다. (ID: " + planId + ")"));
 
-        if (plan.getUserId() == null || !plan.getUserId().equals(userId)) {
+        if (plan.getUserId() == null) {
+            throw new AuthException("게스트 일정은 삭제할 수 없습니다.");
+        }
+        if (!plan.getUserId().equals(userId)) {
             throw new AuthException("해당 일정을 삭제할 권한이 없습니다.");
         }
 
@@ -121,6 +129,7 @@ public class PlanService {
 
     // 단일 일정 상세조회할때 사용(상세내용포함)
     private PlanDetailResponseDto convertToPlanDetailResponseDto(Plan plan) {
+        // PlanDetail이 null일 수 있으므로 안전하게 처리
         String aiChatContent = (plan.getPlanDetail() != null) ? plan.getPlanDetail().getAiChatContent() : null;
         return new PlanDetailResponseDto(
                 "success",
@@ -130,8 +139,8 @@ public class PlanService {
                 plan.getStart(),
                 plan.getEnd(),
                 plan.getCreatedAt(),
-                aiChatContent,
-                "일정 상세 조회가 완료되었습니다"
+                aiChatContent, // null일 수 있음
+                "일정 상세 조회가 완료되었습니다."
         );
     }
 }

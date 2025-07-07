@@ -33,7 +33,7 @@ public class Plan {
     private LocalDateTime createdAt;
 
     @Column(name = "user_id", nullable = true)
-    private Long userId;
+    private Long userId; // 일정을 생성한 사용자의 ID (null일 경우 게스트)
 
     @OneToOne(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private PlanDetail planDetail;

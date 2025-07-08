@@ -6,8 +6,14 @@ spring:
     url: jdbc:mysql://localhost:3306/db_planner?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: user_woogi
     password: 1234
+
   jwt:
     secret: "A7dk@Z!pP9rXqLm3#sWvTjE2bNcY$uKd"
+
+  redis:
+    host: 219.255.16.170
+    port: 6383
+    timeout: 60000
 
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect

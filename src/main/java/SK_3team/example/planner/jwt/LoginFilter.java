@@ -1,6 +1,7 @@
 package SK_3team.example.planner.jwt;
 
 import SK_3team.example.planner.dto.CustomUserDetails;
+import SK_3team.example.planner.redis.RedisUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final JWTUtil jwtUtil;
+    private final RedisUtil redisUtil;
 
     {
         setFilterProcessesUrl("/api/users/login");
@@ -46,6 +48,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         }
     }
 
+    // redis 로그인: username, token값을 redis에 올림
+    // redis 로그아웃: 일정 시간이 지나면 사라지는 token값을 redis 블랙리스트로 올리고, 
+    // 해당 token값을 JWTFilter가 거쳐서 로그아웃 기능 사용
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
@@ -60,7 +65,12 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         String role = auth.getAuthority();
 
-        String token = jwtUtil.createJwt(username, role, 60*60*10L);
+        String token = jwtUtil.createJwt(username, role, 60*60*1000 * 10L);
+
+        System.out.println("발행된 JWT 토큰: " + token);  // 이 부분 추가
+
+        // Redis에 저장 (key: access:<username>, value: token, expire: expiration)
+//        redisUtil.setData("access:" + username, token, 60*60*1000 * 10L);
 
         response.addHeader("Authorization", "Bearer " + token);
     }

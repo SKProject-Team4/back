@@ -29,6 +29,8 @@ public class JWTUtil {
         return claims.get("username", String.class);
     }
 
+
+
     public String getRole(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)

@@ -3,6 +3,7 @@ package SK_3team.example.planner.config;
 import SK_3team.example.planner.jwt.JWTFilter;
 import SK_3team.example.planner.jwt.JWTUtil;
 import SK_3team.example.planner.jwt.LoginFilter;
+import SK_3team.example.planner.redis.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
+    private final RedisUtil redisUtil;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{
@@ -50,15 +52,16 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/users/register").permitAll()
+                        .requestMatchers("/api/users/login").permitAll()
                         .requestMatchers("/plans").permitAll()
                         .anyRequest().authenticated());
 
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class);
 
 
-        http
+                http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
         // 세선 설정
         http

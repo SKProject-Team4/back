@@ -49,7 +49,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     // redis 로그인: username, token값을 redis에 올림
-    // redis 로그아웃: 일정 시간이 지나면 사라지는 token값을 redis 블랙리스트로 올리고, 
+    // redis 로그아웃: 일정 시간이 지나면 사라지는 token값을 redis 블랙리스트로 올리고,
     // 해당 token값을 JWTFilter가 거쳐서 로그아웃 기능 사용
 
     @Override
@@ -59,13 +59,15 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         String username = customUserDetails.getUsername();
 
+        Long userId = customUserDetails.getUserEntity().getId();
+
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
 
         String role = auth.getAuthority();
 
-        String token = jwtUtil.createJwt(username, role, 60*60*1000 * 10L);
+        String token = jwtUtil.createJwt(username, role, userId, 60*60*1000 * 10L);
 
         System.out.println("발행된 JWT 토큰: " + token);  // 이 부분 추가
 

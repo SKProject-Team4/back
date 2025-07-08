@@ -61,7 +61,7 @@ public class SecurityConfig {
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class);
 
 
-                http
+        http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
         // 세선 설정
         http

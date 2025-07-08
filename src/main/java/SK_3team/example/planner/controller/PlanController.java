@@ -3,8 +3,9 @@ package SK_3team.example.planner.controller;
 import SK_3team.example.planner.dto.PlanResponseDto;
 import SK_3team.example.planner.dto.PlanDetailResponseDto;
 import SK_3team.example.planner.dto.PlanRequestDto;
+import SK_3team.example.planner.jwt.JWTUtil;
 import SK_3team.example.planner.service.PlanService;
-import SK_3team.example.planner.util.JwtUtil;
+//import SK_3team.example.planner.util.JwtUtil;
 import SK_3team.example.planner.exception.AuthException;
 
 import org.springframework.http.HttpStatus;
@@ -20,9 +21,9 @@ import java.util.List;
 public class PlanController {
 
     private final PlanService planService;
-    private final JwtUtil jwtUtil;
+    private final JWTUtil jwtUtil;
 
-    public PlanController(PlanService planService, JwtUtil jwtUtil) {
+    public PlanController(PlanService planService, JWTUtil jwtUtil) {
         this.planService = planService;
         this.jwtUtil = jwtUtil;
     }

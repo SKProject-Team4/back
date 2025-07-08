@@ -29,7 +29,6 @@ public class JwtUtil {
                 .getBody();
     }
 
-
     // 토큰에서 사용자 ID 추출 (예시로 "userId" 클레임을 가정)
     public Long getUserIdFromToken(String token) {
         Claims claims = extractAllClaims(token);

@@ -47,10 +47,19 @@ public class JWTUtil {
         return claims.getExpiration().before(new Date());
     }
 
-    public String createJwt(String username, String role, Long expiredMs) {
+    public String createJwt(String username, String role, Long userId, Long expiredMs) {
+
+        Date issuedAt = new Date(System.currentTimeMillis());
+        Date expiration = new Date(System.currentTimeMillis() + expiredMs);
+
+        System.out.println("JWT Issued At: " + issuedAt);
+        System.out.println("JWT Expiration: " + expiration);
+        System.out.println("JWT Validity (ms): " + expiredMs);
+
         return Jwts.builder()
                 .claim("username", username)
                 .claim("role", role)
+                .claim("userId", userId) //
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)
@@ -67,7 +76,8 @@ public class JWTUtil {
 
     public Long getUserIdFromToken(String token) {
         Claims claims = extractAllClaims(token);
-        return Long.parseLong(claims.get("userId", String.class));
+//        return Long.parseLong(claims.get("userId", String.class));
+        return claims.get("userId", Long.class);
     }
 
     public boolean isTokenExpired(String token) {

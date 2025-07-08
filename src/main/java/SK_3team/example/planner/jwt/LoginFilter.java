@@ -13,6 +13,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -54,14 +55,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         String username = customUserDetails.getUsername();
 
+        Long userId = customUserDetails.getUserEntity().getId();
+
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
 
         String role = auth.getAuthority();
 
-        String token = jwtUtil.createJwt(username, role, 60*60*10L);
+        String token = jwtUtil.createJwt(username, role, userId, 60*60*1000 * 10L);
 
+        System.out.println("Generated JWT Token: " + token);
         response.addHeader("Authorization", "Bearer " + token);
     }
 

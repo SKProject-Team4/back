@@ -2,6 +2,7 @@ package SK_3team.example.planner.dto;
 
 import SK_3team.example.planner.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 @RequiredArgsConstructor
+@Getter
 public class CustomUserDetails implements UserDetails {
     private final UserEntity userEntity;
 

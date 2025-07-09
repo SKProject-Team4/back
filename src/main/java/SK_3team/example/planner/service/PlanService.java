@@ -14,23 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.UUID; // UUID 사용
 import java.util.stream.Collectors;
+import java.util.Optional; // Optional 임포트 추가
 
-//** JPG/PDF 라이브러리 관련 임포트 (예시, 실제 구현 시 필요) **
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
+
 
 @Service
 @Transactional(readOnly = true)
@@ -42,14 +40,15 @@ public class PlanService {
         this.planRepository = planRepository;
     }
 
+    // 모든 일정 조회 (회원 전용)
     public List<PlanResponseDto> getAllPlansForUser(Long userId) {
-        List<Plan> plans = planRepository.findByUserId(userId);
+        List<Plan> plans = planRepository.findByUserId(userId); // PlanRepository에 findByUserId 메서드가 있다고 가정
         return plans.stream()
                 .map(this::convertToPlanResponseDto)
                 .collect(Collectors.toList());
     }
 
-    public List<PlanResponseDto> getPlansByDateForUser(LocalDate date, Long userId) {
+    public List<PlanResponseDto> getPlansByDateForUser(Long userId, LocalDate date) { // ⭐ userId가 먼저 오도록 통일
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
         List<Plan> plans = planRepository.findByUserIdAndStartBetween(userId, startOfDay, endOfDay);
@@ -58,136 +57,117 @@ public class PlanService {
                 .collect(Collectors.toList());
     }
 
-    public PlanDetailResponseDto getPlanDetailByIdForUser(Long planId, Long userId) { // 'convertToDto' 대신 명확하게 변경
-        Plan plan = planRepository.findByIdAndUserId(planId, userId)
-                .orElseThrow(() -> new PlanNotFoundException("일정을 찾을 수 없습니다. (ID: " + planId + ", User: " + userId + ")"));
-        return convertToPlanDetailResponseDto(plan); // 상세 DTO 반환
+    public PlanDetailResponseDto getPlanDetailByIdForUser(Long id, Long userId) {
+        Plan plan = planRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new PlanNotFoundException("해당 일정을 찾을 수 없습니다. (ID: " + id + ", UserID: " + userId + ")"));
+        return convertToPlanDetailResponseDto(plan);
     }
+
+    // ** 추가: 임시 계획 시작 (게스트 키 발급) 메서드 **
     @Transactional
     public PlanResponseDto startGuestPlan() {
         Plan plan = new Plan();
-        plan.setUserId(null); // 게스트는 userId가 null
-        String generatedGuestKey = UUID.randomUUID().toString(); // 고유한 UUID 생성
-        plan.setGuestKey(generatedGuestKey); // Plan 엔티티에 게스트 키 저장
+        String guestKey = UUID.randomUUID().toString();
+        plan.setGuestKey(guestKey);
+        plan.setUserId(null); // 게스트 플랜은 userId가 null
         plan.setCreatedAt(LocalDateTime.now());
-        // 제목, 시작/종료 시간 등은 아직 설정하지 않음 (null 또는 기본값)
+        plan.setPlanDetail(null); // PlanDetail은 나중에 save 할 때 연결
 
         Plan savedPlan = planRepository.save(plan);
-
-        // API 명세서에 맞게 응답 DTO 생성 (제목, 시작/종료 시간은 아직 없으므로 null)
-        return new PlanResponseDto(
-                "success",
-                201, // Created
-                null, // start
-                null, // end
-                savedPlan.getCreatedAt(),
-                null, // title
-                savedPlan.getId(),
-                savedPlan.getGuestKey(),
-                "임시 일정이 성공적으로 생성되었습니다. (게스트 키 발급)"
-        );
+        return convertToPlanResponseDto(savedPlan);
     }
 
-    // 일정 생성
-    // ** 변경: 기존 createPlan 메서드를 createOrUpdatePlan으로 변경 및 로직 수정 **
-    // 이 메서드는 이제 사용자가 입력 페이지에서 정보를 제출할 때 호출됩니다.
+    // ** 변경: 기존 createPlan 대신 savePlan으로 변경 (또는 updatePlanDetails 등) **
+    // 사용자가 입력 페이지에서 정보를 제출할 때 호출 (guestKey 또는 userId 기반으로 기존 Plan 업데이트/생성)
     @Transactional
-    public PlanResponseDto createOrUpdatePlan(PlanRequestDto requestDto, Long userId, String guestKey) {
+    public PlanResponseDto createOrUpdatePlan(PlanRequestDto requestDto, Long userId, String guestKey) { // guestKey 파라미터 추가
         Plan plan;
+        String guestKeyFromRequest = guestKey; // 컨트롤러에서 받은 guestKey 사용
 
-        if (guestKey != null && !guestKey.isEmpty()) {
-            // 1. guestKey가 제공되면 기존 임시 계획을 찾아서 업데이트
-            plan = planRepository.findByGuestKey(guestKey)
-                    .orElseThrow(() -> new PlanNotFoundException("게스트 키에 해당하는 임시 일정을 찾을 수 없습니다."));
+        if (guestKeyFromRequest != null && !guestKeyFromRequest.isEmpty()) {
+            // Case 1: 요청에 guestKey가 있는 경우 (기존 게스트 일정 로드)
+            plan = planRepository.findByGuestKey(guestKeyFromRequest)
+                    .orElseThrow(() -> new PlanNotFoundException("해당 게스트 일정을 찾을 수 없습니다. (GuestKey: " + guestKeyFromRequest + ")"));
 
-            // 만약 로그인한 사용자라면, 이 임시 계획의 소유권을 해당 회원에게 이전
-            if (userId != null) {
+            // 게스트 키로 찾은 일정이 이미 회원에게 귀속된 경우
+            if (plan.getUserId() != null && !plan.getUserId().equals(userId)) { // 로그인한 유저가 다른 유저의 게스트플랜을 수정하려고 할 때
+                throw new AuthException("이 일정은 이미 다른 회원에게 귀속되었습니다. 해당 일정은 수정할 수 없습니다.");
+            } else if (plan.getUserId() != null && plan.getUserId().equals(userId)) { // 로그인한 유저가 본인의 게스트플랜을 수정하려고 할 때
+                // 이 경우, userId가 있는 상태에서 guestKey로 접근한 것이므로, 기존 plan.userId를 유지하고, guestKey를 null로 설정
+                plan.setGuestKey(null); // 더 이상 게스트 플랜이 아님
+            } else if (userId != null) { // 게스트 플랜을 회원에게 귀속시키려 할 때
                 plan.setUserId(userId);
-                plan.setGuestKey(null); // 회원에게 이전되면 guestKey는 더 이상 필요 없음
+                plan.setGuestKey(null); // 더 이상 게스트 플랜이 아님
             }
         } else if (userId != null) {
-            // 2. guestKey 없이 userId만 제공되면 (로그인한 회원이 새로운 계획 생성)
+            // Case 2: 요청에 guestKey가 없고 userId가 있는 경우 (로그인한 회원의 새 일정 생성)
             plan = new Plan();
             plan.setUserId(userId);
-            plan.setGuestKey(null); // 회원 일정은 guestKey가 없음
+            plan.setGuestKey(null);
             plan.setCreatedAt(LocalDateTime.now());
         } else {
-            // 3. guestKey도 없고 userId도 없는 경우 (잘못된 요청 또는 /plans/start로 유도해야 함)
-            throw new IllegalArgumentException("유효한 일정 생성 정보가 부족합니다. 먼저 임시 일정을 시작해주세요.");
+            // Case 3: guestKey도 없고 userId도 없는 경우 (게스트 새 일정 생성)
+            plan = new Plan();
+            String generatedGuestKey = UUID.randomUUID().toString(); // 새로운 guestKey 생성
+            plan.setGuestKey(generatedGuestKey);
+            plan.setUserId(null);
+            plan.setCreatedAt(LocalDateTime.now());
         }
 
-        // 공통적으로 Plan 정보 업데이트
+        // 공통 로직 (PlanDetail 포함)
         plan.setTitle(requestDto.getTitle());
         plan.setStart(requestDto.getStart());
         plan.setEnd(requestDto.getEnd());
 
-        // PlanDetail 업데이트 또는 생성
-        if (plan.getPlanDetail() != null) {
-            plan.getPlanDetail().setAiChatContent(requestDto.getAiChatContent());
-            plan.getPlanDetail().setChatId(requestDto.getChatId());
-        } else {
-            PlanDetail newPlanDetail = new PlanDetail();
-            newPlanDetail.setPlan(plan);
-            newPlanDetail.setAiChatContent(requestDto.getAiChatContent());
-            newPlanDetail.setChatId(requestDto.getChatId()); //
-            plan.setPlanDetail(newPlanDetail);
+        PlanDetail planDetail = plan.getPlanDetail();
+        if (planDetail == null) {
+            planDetail = new PlanDetail();
+            plan.setPlanDetail(planDetail);
+            planDetail.setPlan(plan);
         }
+        planDetail.setAiChatContent(requestDto.getAiChatContent());
+        // planDetail에 chatId 필드가 있다면 추가 (PlanRequestDto에 chatId가 있어야 함)
+        // if (requestDto.getChatId() != null) {
+        //     planDetail.setChatId(requestDto.getChatId());
+        // }
 
         Plan savedPlan = planRepository.save(plan);
-
-        return new PlanResponseDto(
-                "success",
-                200,
-                savedPlan.getStart(),
-                savedPlan.getEnd(),
-                savedPlan.getCreatedAt(),
-                savedPlan.getTitle(),
-                savedPlan.getId(),
-                savedPlan.getGuestKey(), // 업데이트된 guestKey (회원 전환 시 null이 될 수 있음)
-                "일정이 성공적으로 저장되었습니다."
-        );
+        return convertToPlanResponseDto(savedPlan);
     }
 
-    // 일정 수정(로그인 회원만 가능)
-    @Transactional
-    public PlanResponseDto updatePlan(Long planId, PlanRequestDto requestDto, Long userId) {
-        Plan plan = planRepository.findById(planId)
-                .orElseThrow(() -> new PlanNotFoundException("수정할 일정을 찾을 수 없습니다. (ID: " + planId + ")"));
 
-        if (plan.getUserId() == null) {
-            throw new AuthException("게스트 일정은 수정할 수 없습니다.");
-        }
-        if (!plan.getUserId().equals(userId)) {
-            throw new AuthException("해당 일정을 수정할 권한이 없습니다.");
-        }
+
+    @Transactional
+    public PlanResponseDto updatePlan(Long id, PlanRequestDto requestDto, Long userId) {
+        Plan plan = planRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new PlanNotFoundException("수정할 일정을 찾을 수 없습니다. (ID: " + id + ", UserID: " + userId + ")"));
 
         plan.setTitle(requestDto.getTitle());
         plan.setStart(requestDto.getStart());
         plan.setEnd(requestDto.getEnd());
 
-        if (plan.getPlanDetail() != null) {
-            plan.getPlanDetail().setAiChatContent(requestDto.getAiChatContent());
-            plan.getPlanDetail().setChatId(requestDto.getChatId()); //
-        } else {
-            // PlanDetail이 없는 경우 새로 생성 (예외적인 상황일 수 있음)
-            PlanDetail newDetail = new PlanDetail();
-            newDetail.setAiChatContent(requestDto.getAiChatContent());
-            newDetail.setChatId(requestDto.getChatId()); //
-            newDetail.setPlan(plan); // PlanDetail과 Plan 연결
-            plan.setPlanDetail(newDetail);
+        PlanDetail planDetail = plan.getPlanDetail();
+        if (planDetail == null) {
+            planDetail = new PlanDetail();
+            plan.setPlanDetail(planDetail);
+            planDetail.setPlan(plan);
         }
+        planDetail.setAiChatContent(requestDto.getAiChatContent());
+        // planDetail에 chatId 필드가 있다면 추가 (PlanRequestDto에 chatId가 있어야 함)
+        // if (requestDto.getChatId() != null) {
+        //     planDetail.setChatId(requestDto.getChatId());
+        // }
 
         Plan updatedPlan = planRepository.save(plan);
         return convertToPlanResponseDto(updatedPlan);
     }
 
-    // 일정 삭제(로그인 회원만 가능)
     @Transactional
     public void deletePlan(Long planId, Long userId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new PlanNotFoundException("삭제할 일정을 찾을 수 없습니다. (ID: " + planId + ")"));
 
-        if (plan.getUserId() == null) {
+        if (plan.getUserId() == null) { // 게스트 일정을 회원이 삭제 시도
             throw new AuthException("게스트 일정은 삭제할 수 없습니다.");
         }
         if (!plan.getUserId().equals(userId)) {
@@ -197,84 +177,104 @@ public class PlanService {
         planRepository.delete(plan);
     }
 
-    // ** 추가: 일정 조회를 위한 유틸리티 메서드 (회원 or 게스트 파일 내보내기 시 사용) **
+    // PDF 생성 메서드 (회원/게스트 공용)
+    @Transactional(readOnly = true)
+    public byte[] generatePlanPdf(Long planId, String guestKey, Long userId) throws IOException { // IOException 추가
+        Plan plan = findPlanForExport(planId, guestKey, userId); // 공통 로직으로 일정 찾기
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        document.add(new Paragraph("Plan Title: " + plan.getTitle()));
+        document.add(new Paragraph("Start Date: " + plan.getStart()));
+        document.add(new Paragraph("End Date: " + plan.getEnd()));
+        if (plan.getPlanDetail() != null && plan.getPlanDetail().getAiChatContent() != null) {
+            document.add(new Paragraph("AI Chat Content: " + plan.getPlanDetail().getAiChatContent()));
+        }
+        document.close();
+        pdf.close();
+        writer.close();
+
+        return baos.toByteArray();
+    }
+
+    // JPG 생성 메서드 (회원/게스트 공용)
+    @Transactional(readOnly = true)
+    public byte[] generatePlanJpg(Long planId, String guestKey, Long userId) throws IOException { // IOException 추가
+        Plan plan = findPlanForExport(planId, guestKey, userId); // 공통 로직으로 일정 찾기
+
+        int width = 800;
+        int height = 600;
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = bufferedImage.createGraphics();
+
+        // 배경 설정
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, width, height);
+
+        // 텍스트 설정
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Malgun Gothic", Font.BOLD, 24)); // 한글 폰트 (예시, 시스템에 설치된 폰트 사용)
+
+        int y = 50;
+        g2d.drawString("Plan Title: " + plan.getTitle(), 50, y);
+        y += 30;
+        g2d.drawString("Start Date: " + plan.getStart(), 50, y);
+        y += 30;
+        g2d.drawString("End Date: " + plan.getEnd(), 50, y);
+        y += 30;
+        if (plan.getPlanDetail() != null && plan.getPlanDetail().getAiChatContent() != null) {
+            g2d.setFont(new Font("Malgun Gothic", Font.PLAIN, 16));
+            g2d.drawString("AI Chat Content:", 50, y);
+            y += 20;
+            // 긴 내용은 여러 줄로 나누어 그리기
+            String content = plan.getPlanDetail().getAiChatContent();
+            // 간단하게 줄바꿈 처리 (실제로는 더 복잡한 로직 필요)
+            int charLimit = 80; // 한 줄에 표시할 최대 문자 수
+            for (int i = 0; i < content.length(); i += charLimit) {
+                String line = content.substring(i, Math.min(i + charLimit, content.length()));
+                g2d.drawString(line, 50, y += 20);
+            }
+        }
+
+        g2d.dispose();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "jpg", baos); // IOException이 발생할 수 있음
+        return baos.toByteArray();
+    }
+
+    // PDF/JPG 내보내기 시 일정을 찾는 공통 로직
     private Plan findPlanForExport(Long planId, String guestKey, Long userId) {
-        // 1. 회원 요청인 경우 (userId가 있고, planId가 주어졌을 때)
-        if (userId != null && planId != null) {
-            return planRepository.findByIdAndUserId(planId, userId)
-                    .orElseThrow(() -> new PlanNotFoundException("회원 일정을 찾을 수 없거나 접근 권한이 없습니다."));
-        }
-        // 2. 게스트 요청인 경우 (userId가 없고, guestKey가 주어졌을 때)
-        else if (userId == null && guestKey != null && !guestKey.isEmpty()) {
-            // guestKey로만 조회하고, 해당 플랜의 userId가 null인지 다시 확인하여 보안 강화
-            return planRepository.findByGuestKeyAndUserIdIsNull(guestKey)
-                    .orElseThrow(() -> new PlanNotFoundException("게스트 일정을 찾을 수 없거나 접근 권한이 없습니다."));
-        }
-        // 3. 유효하지 않은 요청 (둘 다 없거나 잘못된 조합)
-        else {
-            throw new IllegalArgumentException("유효한 일정 식별자(planId 또는 guestKey)와 사용자 정보가 필요합니다.");
+        if (planId != null) { // Plan ID가 제공된 경우 (회원 일정 또는 회원 계정으로 게스트 일정 조회)
+            if (userId != null) {
+                return planRepository.findByIdAndUserId(planId, userId)
+                        .orElseThrow(() -> new PlanNotFoundException("해당 회원 일정을 찾을 수 없습니다. (ID: " + planId + ", UserID: " + userId + ")"));
+            } else {
+                // 로그인하지 않은 상태에서 planId로 요청 -> 잘못된 요청 또는 게스트 키를 사용해야 함
+                throw new IllegalArgumentException("로그인 없이 Plan ID로 일정을 조회할 수 없습니다. 게스트 키를 사용해주세요.");
+            }
+        } else if (guestKey != null && !guestKey.isEmpty()) { // Guest Key가 제공된 경우
+            Optional<Plan> planOptional = planRepository.findByGuestKey(guestKey);
+            if (planOptional.isPresent()) {
+                Plan plan = planOptional.get();
+                // 게스트 키로 찾은 일정이 회원에게 귀속된 경우, 요청한 userId와 일치하는지 확인
+                if (plan.getUserId() != null && userId != null && !plan.getUserId().equals(userId)) {
+                    throw new AuthException("해당 게스트 일정을 조회할 권한이 없습니다. (이미 다른 회원에게 귀속)");
+                }
+                return plan;
+            } else {
+                throw new PlanNotFoundException("해당 게스트 일정을 찾을 수 없습니다. (GuestKey: " + guestKey + ")");
+            }
+        } else {
+            throw new IllegalArgumentException("일정 ID 또는 게스트 키가 필요합니다.");
         }
     }
 
-    // ** 추가: PDF 파일 생성 메서드 (회원/게스트 공용) **
-    @Transactional(readOnly = true)
-    public byte[] generatePlanPdf(Long planId, String guestKey, Long userId) {
-        Plan plan = findPlanForExport(planId, guestKey, userId);
 
-        // 이 부분에 실제 PDF 생성 라이브러리(예: iText)를 사용하여 PDF를 만드는 로직을 구현합니다.
-        // 현재는 예시 데이터를 반환합니다.
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         try (PdfWriter writer = new PdfWriter(baos);
-              PdfDocument pdf = new PdfDocument(writer);
-              Document document = new Document(pdf)) {
-             document.add(new Paragraph("일정 제목: " + plan.getTitle()));
-             document.add(new Paragraph("시작: " + plan.getStart().toLocalDate()));
-             document.add(new Paragraph("종료: " + plan.getEnd().toLocalDate()));
-             if (plan.getPlanDetail() != null && plan.getPlanDetail().getAiChatContent() != null) {
-                 document.add(new Paragraph("AI 채팅 내용: " + plan.getPlanDetail().getAiChatContent()));
-             }
-             if (plan.getPlanDetail() != null && plan.getPlanDetail().getChatId() != null) {
-                 document.add(new Paragraph("대화 ID: " + plan.getPlanDetail().getChatId()));
-             }
-         } catch (IOException e) {
-             throw new RuntimeException("PDF 생성 중 오류 발생", e);
-         }
-         return baos.toByteArray();
-
-//        System.out.println("PDF 생성 요청: " + plan.getTitle() + " (Plan ID: " + plan.getId() + ", GuestKey: " + plan.getGuestKey() + ")");
-//        return ("Dummy PDF Content for " + plan.getTitle() + ". Start: " + plan.getStart()).getBytes(); // 실제 PDF 데이터 반환
-    }
-
-    // ** 추가: JPG (이미지) 파일 생성 메서드 (회원/게스트 공용) **
-    @Transactional(readOnly = true)
-    public byte[] generatePlanJpg(Long planId, String guestKey, Long userId) {
-        Plan plan = findPlanForExport(planId, guestKey, userId);
-
-        // 이 부분에 실제 이미지 생성 라이브러리(예: Java AWT Graphics2D, ImageIO)를 사용하여 이미지를 만드는 로직을 구현합니다.
-        // 현재는 예시 데이터를 반환합니다.
-         BufferedImage image = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
-         Graphics2D g2d = image.createGraphics();
-         g2d.drawString("일정 제목: " + plan.getTitle(), 50, 50);
-         g2d.drawString("시작일: " + plan.getStart().toLocalDate(), 50, 80);
-        if (plan.getPlanDetail() != null && plan.getPlanDetail().getChatId() != null) { // ⭐ 추가: JPG에 chatId 포함
-            g2d.drawString("대화 ID: " + plan.getPlanDetail().getChatId(), 50, 110);
-        }
-         g2d.dispose();
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-         try {
-             ImageIO.write(image, "jpg", baos);
-         } catch (IOException e) {
-             throw new RuntimeException("JPG 생성 중 오류 발생", e);
-         }
-         return baos.toByteArray();
-
-//        System.out.println("JPG 생성 요청: " + plan.getTitle() + " (Plan ID: " + plan.getId() + ", GuestKey: " + plan.getGuestKey() + ")");
-//        return ("Dummy JPG Content for " + plan.getTitle() + ". Start: " + plan.getStart()).getBytes(); // 실제 JPG 데이터 반환
-    }
-
-
-    // 캘린더 목록 조회 시 사용
+    // DTO 변환 메서드들
     private PlanResponseDto convertToPlanResponseDto(Plan plan) {
         return new PlanResponseDto(
                 "success",
@@ -284,16 +284,15 @@ public class PlanService {
                 plan.getCreatedAt(),
                 plan.getTitle(),
                 plan.getId(),
-                plan.getGuestKey(), // ** 변경 ** guestKey 포함
-                "캘린더 조회가 완료되었습니다"
+                plan.getGuestKey(), // ⭐ guestKey 포함
+                "캘린더 생성 및 저장이 완료되었습니다"
         );
     }
 
-    // 단일 일정 상세조회할때 사용(상세내용포함)
     private PlanDetailResponseDto convertToPlanDetailResponseDto(Plan plan) {
-        // PlanDetail이 null일 수 있으므로 안전하게 처리
         String aiChatContent = (plan.getPlanDetail() != null) ? plan.getPlanDetail().getAiChatContent() : null;
-        String chatId = (plan.getPlanDetail() != null) ? plan.getPlanDetail().getChatId() : null;
+        String chatId = (plan.getPlanDetail() != null) ? plan.getPlanDetail().getChatId() : null; // ⭐ chatId 추가 (PlanDetail에 chatId 필드가 있다면)
+
         return new PlanDetailResponseDto(
                 "success",
                 200,
@@ -303,8 +302,8 @@ public class PlanService {
                 plan.getEnd(),
                 plan.getCreatedAt(),
                 aiChatContent,
-                chatId, // null일 수 있음
-                "일정 상세 조회가 완료되었습니다."
+                chatId, // ⭐ chatId 추가 (PlanDetailResponseDto에 chatId 필드가 있다면)
+                "단일 일정 상세 조회가 완료되었습니다"
         );
     }
 }

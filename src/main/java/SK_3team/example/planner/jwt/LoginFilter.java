@@ -69,10 +69,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         String token = jwtUtil.createJwt(username, role, userId, 60*60*1000 * 10L);
 
-        System.out.println("발행된 JWT 토큰: " + token);  // 이 부분 추가
+        System.out.println("발행된 JWT 토큰: " + token);
 
         // Redis에 저장 (key: access:<username>, value: token, expire: expiration)
-//        redisUtil.setData("access:" + username, token, 60*60*1000 * 10L);
+        redisUtil.setData("access:" + username, token, 60*60*1000 * 10L);
 
         response.addHeader("Authorization", "Bearer " + token);
     }

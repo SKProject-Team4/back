@@ -24,4 +24,13 @@ public class RedisUtil {
     public void deleteData(String key){
         redisTemplate.delete(key);
     }
+
+    // 블랙리스트 등록
+    public void setBlackList(String token, Long expiredTimeMs) {
+        redisTemplate.opsForValue().set("blacklist:" + token, "logout", expiredTimeMs, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean isBlackListed(String token) {
+        return redisTemplate.hasKey("blacklist:" + token);
+    }
 }

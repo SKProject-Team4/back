@@ -1,7 +1,10 @@
 package SK_3team.example.planner.controller;
 
 import SK_3team.example.planner.dto.UserDTO;
+import SK_3team.example.planner.jwt.JWTUtil;
+import SK_3team.example.planner.redis.RedisUtil;
 import SK_3team.example.planner.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final RedisUtil redisUtil;
+    private final JWTUtil jwtUtil;
 
     @GetMapping("/")
     public String mainPage(){
@@ -36,5 +41,5 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
-    // 로그아웃
+
 }

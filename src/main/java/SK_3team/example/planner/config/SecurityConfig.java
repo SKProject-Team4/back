@@ -3,6 +3,7 @@ package SK_3team.example.planner.config;
 import SK_3team.example.planner.jwt.JWTFilter;
 import SK_3team.example.planner.jwt.JWTUtil;
 import SK_3team.example.planner.jwt.LoginFilter;
+import SK_3team.example.planner.jwt.LogoutFilter;
 import SK_3team.example.planner.redis.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -52,22 +53,22 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/users/register").permitAll()
-                        .requestMatchers("/api/users/login").permitAll()
+                        .requestMatchers("/api/users/**").permitAll()
                         .requestMatchers("/plans").permitAll()
                         .anyRequest().authenticated());
 
+
+        http
+                .addFilterBefore(new LogoutFilter(jwtUtil, redisUtil), LoginFilter.class); // 👈 여기 추가
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class);
-
-
         http
-                .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
-        // 세선 설정
+                .addFilterBefore(new JWTFilter(jwtUtil, redisUtil), LoginFilter.class);
+
+
         http
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
 
         return http.build();
     }

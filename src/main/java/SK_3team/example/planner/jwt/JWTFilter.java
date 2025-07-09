@@ -2,6 +2,7 @@ package SK_3team.example.planner.jwt;
 
 import SK_3team.example.planner.dto.CustomUserDetails;
 import SK_3team.example.planner.entity.UserEntity;
+import SK_3team.example.planner.redis.RedisUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,35 +19,64 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
+    private final RedisUtil redisUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authorization= request.getHeader("Authorization");
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-            System.out.println("token null");
+        String authorization = request.getHeader("Authorization");
+        String requestURI = request.getRequestURI();
+
+        // 토큰 잘 불러와지나 체크
+        System.out.println(authorization);
+
+        // 여기서 token 필요없는 기능들 다 제끼면 될듯
+        // 회원가입, 로그인 요청은 인증없이 통과
+
+        // + 임시키 발급
+        if (requestURI.equals("/api/users/register") || requestURI.equals("/api/users/login")) {
             filterChain.doFilter(request, response);
-
             return;
         }
 
-        System.out.println("authorization now");
+        // Authorization 상태 이상하면 에러
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/json; charset=UTF-8");
+            response.getWriter().write("{\"message\": \"인증 토큰이 필요합니다.\"}");
+            return;
+        }
 
-        //Bearer 제거
-        String token = authorization.split(" ")[1];
+        // 토큰 만료됐는지, 블랙리스튼지 등 확인
+        String token = authorization.substring(7);
 
         if (jwtUtil.isExpired(token)) {
-
-            System.out.println("token expired");
-            filterChain.doFilter(request, response);
-
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"message\": \"토큰이 만료되었습니다.\"}");
             return;
         }
 
+        // redis에서 데이터 가져오기
         String username = jwtUtil.getUsername(token);
+        String storedToken = redisUtil.getData("access:" + username);
+
+        if (storedToken == null || !storedToken.equals(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"message\": \"유효하지 않은 토큰입니다.\"}");
+            return;
+        }
+
+        if (redisUtil.isBlackListed(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"message\": \"로그아웃 된 토큰입니다.\"}");
+            return;
+        }
+
+        // 인증처리
         String role = jwtUtil.getRole(token);
 
-        //userEntity를 생성하여 값 set
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(username);
         userEntity.setPassword("temppassword");
@@ -54,12 +84,11 @@ public class JWTFilter extends OncePerRequestFilter {
 
         CustomUserDetails customUserDetails = new CustomUserDetails(userEntity);
 
-        //스프링 시큐리티 인증 토큰 생성
-        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
-        //세션에 사용자 등록
+        Authentication authToken = new UsernamePasswordAuthenticationToken(
+                customUserDetails, null, customUserDetails.getAuthorities());
+
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
-
     }
 }

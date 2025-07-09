@@ -33,9 +33,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
         // 여기서 token 필요없는 기능들 다 제끼면 될듯
         // 회원가입, 로그인 요청은 인증없이 통과
-
-        // + 임시키 발급
-        if (requestURI.equals("/api/users/register") || requestURI.equals("/api/users/login")) {
+        if (requestURI.equals("/api/users/register") || requestURI.equals("/api/users/login") || requestURI.equals("/api/users/logincheck")){
             filterChain.doFilter(request, response);
             return;
         }
@@ -45,6 +43,7 @@ public class JWTFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setCharacterEncoding("UTF-8");
             response.setContentType("application/json; charset=UTF-8");
+
             response.getWriter().write("{\"message\": \"인증 토큰이 필요합니다.\"}");
             return;
         }
@@ -53,6 +52,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         if (jwtUtil.isExpired(token)) {
+
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"message\": \"토큰이 만료되었습니다.\"}");
             return;

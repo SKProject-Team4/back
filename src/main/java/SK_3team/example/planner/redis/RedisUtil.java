@@ -33,4 +33,10 @@ public class RedisUtil {
     public boolean isBlackListed(String token) {
         return redisTemplate.hasKey("blacklist:" + token);
     }
+
+    // logincheck
+    public boolean hasKey(String key) {
+        return redisTemplate.hasKey(key);
+    }
+
 }

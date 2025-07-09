@@ -5,9 +5,10 @@ import SK_3team.example.planner.dto.PlanDetailResponseDto;
 import SK_3team.example.planner.dto.PlanRequestDto;
 import SK_3team.example.planner.jwt.JWTUtil;
 import SK_3team.example.planner.service.PlanService;
-//import SK_3team.example.planner.util.JwtUtil;
 import SK_3team.example.planner.exception.AuthException;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -82,12 +83,77 @@ public class PlanController {
         return new ResponseEntity<>(planDetail, HttpStatus.OK);
     }
 
-    // 일정 생성 (로그인/게스트 가능)
-    @PostMapping("/create")
-    public ResponseEntity<PlanResponseDto> createPlan(@RequestBody PlanRequestDto requestDto, HttpServletRequest request) {
+    // ** 추가: 임시 계획 시작 (게스트 키 발급) 엔드포인트 **
+    @PostMapping("/start")
+    public ResponseEntity<PlanResponseDto> startNewPlan() {
+        PlanResponseDto newTempPlan = planService.startGuestPlan();
+        return new ResponseEntity<>(newTempPlan, HttpStatus.CREATED); // 201 Created
+    }
+
+    // ** 변경: 기존 createPlan 대신 savePlan으로 변경 (또는 updatePlanDetails 등) **
+    // 사용자가 입력 페이지에서 정보를 제출할 때 호출 (guestKey 또는 userId 기반으로 기존 Plan 업데이트/생성)
+    @PostMapping("/save") // 엔드포인트 이름 변경 (create 대신 save/update 개념)
+    public ResponseEntity<PlanResponseDto> savePlan(
+            @RequestBody PlanRequestDto requestDto,
+            HttpServletRequest request,
+            @RequestParam(required = false) String guestKey) { // guestKey를 쿼리 파라미터로 받을 수 있도록
+
         Long userId = getUserIdFromRequest(request);
-        PlanResponseDto newPlan = planService.createPlan(requestDto, userId);
-        return new ResponseEntity<>(newPlan, HttpStatus.CREATED);
+
+        // 서비스 메서드 호출 시 guestKey도 함께 전달
+        PlanResponseDto savedPlan = planService.createOrUpdatePlan(requestDto, userId, guestKey);
+        return new ResponseEntity<>(savedPlan, HttpStatus.OK); // 200 OK (업데이트 개념이 강하므로)
+    }
+
+    // JPG/PDF 파일 저장 엔드포인트 (회원/게스트 공용) **
+    // planId (회원) 또는 guestKey (게스트) 둘 중 하나는 필수로 전달되어야 합니다.
+    @GetMapping("/export/pdf")
+    public ResponseEntity<byte[]> exportPlanAsPdf(
+            HttpServletRequest request, // userId 추출용
+            @RequestParam(required = false) Long planId, // 회원 일정용
+            @RequestParam(required = false) String guestKey) { // 게스트 일정용
+
+        Long userId = getUserIdFromRequest(request); // JWT에서 userId 추출
+
+        // planId와 guestKey 중 하나라도 없으면 에러 처리
+        if (planId == null && (guestKey == null || guestKey.isEmpty())) {
+            throw new IllegalArgumentException("일정 ID 또는 게스트 키가 필요합니다.");
+        }
+        // 로그인 상태인데 guestKey가 주어지면 (잘못된 요청일 수 있음, 또는 게스트 키로 자신의 게스트 일정 찾기)
+        // userId가 있고 planId가 없는 경우 guestKey를 사용하는 시나리오도 허용.
+        // PlanService의 findPlanForExport에서 복합적으로 처리.
+
+        byte[] pdfBytes = planService.generatePlanPdf(planId, guestKey, userId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String fileName = "plan_" + (planId != null ? planId : (guestKey != null ? guestKey.substring(0, 8) : "unknown")) + ".pdf"; // 파일명 유동적 생성
+        headers.setContentDispositionFormData("attachment", fileName);
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
+    // JPG 파일 저장 엔드포인트 (회원/게스트 공용) **
+    @GetMapping("/export/jpg")
+    public ResponseEntity<byte[]> exportPlanAsJpg(
+            HttpServletRequest request,
+            @RequestParam(required = false) Long planId,
+            @RequestParam(required = false) String guestKey) {
+
+        Long userId = getUserIdFromRequest(request);
+
+        if (planId == null && (guestKey == null || guestKey.isEmpty())) {
+            throw new IllegalArgumentException("일정 ID 또는 게스트 키가 필요합니다.");
+        }
+
+        byte[] jpgBytes = planService.generatePlanJpg(planId, guestKey, userId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        String fileName = "plan_" + (planId != null ? planId : (guestKey != null ? guestKey.substring(0, 8) : "unknown")) + ".jpg";
+        headers.setContentDispositionFormData("attachment", fileName);
+
+        return new ResponseEntity<>(jpgBytes, headers, HttpStatus.OK);
     }
 
     // 일정 수정 (로그인 회원만 가능)

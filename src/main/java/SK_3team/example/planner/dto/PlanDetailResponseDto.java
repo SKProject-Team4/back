@@ -20,6 +20,7 @@ public class PlanDetailResponseDto {
     private LocalDateTime end;
     private LocalDateTime createdAt;
     private String aiChatContent;
+    private String chatId;
     private String message;
 
 }

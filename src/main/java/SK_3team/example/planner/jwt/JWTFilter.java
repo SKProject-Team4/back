@@ -77,6 +77,7 @@ public class JWTFilter extends OncePerRequestFilter {
         // 인증처리
         String role = jwtUtil.getRole(token);
 
+        //userEntity를 생성하여 값 set
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(username);
         userEntity.setPassword("temppassword");
@@ -90,5 +91,6 @@ public class JWTFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
+
     }
 }

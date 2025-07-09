@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
+import java.io.IOException; // IOException 임포트 추가
 
 @RestController
 @RequestMapping("/plans")
@@ -31,6 +32,7 @@ public class PlanController {
 
     private Long getUserIdFromRequest(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
+        System.out.println("권한헤더 " + authorizationHeader);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             if (jwtUtil.validateToken(token)) {
@@ -40,21 +42,7 @@ public class PlanController {
         return null;
     }
 
-    @GetMapping("/get_plans")
-    public ResponseEntity<List<PlanResponseDto>> getAllPlans(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
-
-        if (userId == null) {
-            throw new AuthException("로그인이 필요합니다. (회원 전용 기능)");
-        }
-        List<PlanResponseDto> plans = planService.getAllPlansForUser(userId);
-
-        if (plans.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 일정이 없으면 204
-        }
-        return new ResponseEntity<>(plans, HttpStatus.OK);
-    }
-
+    // 특정 날짜의 일정 목록을 가져오는 엔드포인트 (회원 전용)
     @GetMapping("/get_plans_by_date")
     public ResponseEntity<List<PlanResponseDto>> getPlansByDate(
             @RequestParam("date") LocalDate date,
@@ -63,7 +51,8 @@ public class PlanController {
         if (userId == null) {
             throw new AuthException("로그인이 필요합니다. (회원 전용 기능)");
         }
-        List<PlanResponseDto> plans = planService.getPlansByDateForUser(date, userId);
+        // PlanService의 메서드 파라미터 순서에 맞춰 userId를 먼저 전달
+        List<PlanResponseDto> plans = planService.getPlansByDateForUser(userId, date);
         if (plans.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -83,11 +72,30 @@ public class PlanController {
         return new ResponseEntity<>(planDetail, HttpStatus.OK);
     }
 
+    @GetMapping("/get_plans") //
+    public ResponseEntity<List<PlanResponseDto>> getAllPlans(HttpServletRequest request) {
+        Long userId = getUserIdFromRequest(request);
+
+        if (userId == null) {
+            throw new AuthException("로그인이 필요합니다. (회원 전용 기능)");
+        }
+
+        List<PlanResponseDto> plans = planService.getAllPlansForUser(userId);
+
+        if (plans.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        return new ResponseEntity<>(plans, HttpStatus.OK);
+    }
+
     // ** 추가: 임시 계획 시작 (게스트 키 발급) 엔드포인트 **
     @PostMapping("/start")
-    public ResponseEntity<PlanResponseDto> startNewPlan() {
-        PlanResponseDto newTempPlan = planService.startGuestPlan();
-        return new ResponseEntity<>(newTempPlan, HttpStatus.CREATED); // 201 Created
+    public ResponseEntity<PlanResponseDto> startPlan() {
+        // 이 엔드포인트는 게스트 키 발급만을 위한 것이므로,
+        // 어떠한 HTTP 요청 객체나 인증 정보도 필요로 하지 않습니다.
+        PlanResponseDto newPlan = planService.startGuestPlan(); // PlanService에 새로운 메서드 호출
+        return new ResponseEntity<>(newPlan, HttpStatus.CREATED);
     }
 
     // ** 변경: 기존 createPlan 대신 savePlan으로 변경 (또는 updatePlanDetails 등) **
@@ -105,13 +113,13 @@ public class PlanController {
         return new ResponseEntity<>(savedPlan, HttpStatus.OK); // 200 OK (업데이트 개념이 강하므로)
     }
 
-    // JPG/PDF 파일 저장 엔드포인트 (회원/게스트 공용) **
+    // JPG/PDF 파일 저장 엔드포인트 (회원/게스트 공용)
     // planId (회원) 또는 guestKey (게스트) 둘 중 하나는 필수로 전달되어야 합니다.
     @GetMapping("/export/pdf")
     public ResponseEntity<byte[]> exportPlanAsPdf(
             HttpServletRequest request, // userId 추출용
             @RequestParam(required = false) Long planId, // 회원 일정용
-            @RequestParam(required = false) String guestKey) { // 게스트 일정용
+            @RequestParam(required = false) String guestKey) throws IOException { // IOException 처리 추가
 
         Long userId = getUserIdFromRequest(request); // JWT에서 userId 추출
 
@@ -133,12 +141,12 @@ public class PlanController {
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
-    // JPG 파일 저장 엔드포인트 (회원/게스트 공용) **
+    // JPG 파일 저장 엔드포인트 (회원/게스트 공용)
     @GetMapping("/export/jpg")
     public ResponseEntity<byte[]> exportPlanAsJpg(
             HttpServletRequest request,
             @RequestParam(required = false) Long planId,
-            @RequestParam(required = false) String guestKey) {
+            @RequestParam(required = false) String guestKey) throws IOException { // IOException 처리 추가
 
         Long userId = getUserIdFromRequest(request);
 
@@ -156,7 +164,7 @@ public class PlanController {
         return new ResponseEntity<>(jpgBytes, headers, HttpStatus.OK);
     }
 
-    // 일정 수정 (로그인 회원만 가능)
+    // 일정 수정 (로그인 회원만 가능) - 기존 PUT /plans/update/{id} 유지 (save와 역할 분리)
     @PutMapping("/update/{id}")
     public ResponseEntity<PlanResponseDto> updatePlan(@PathVariable Long id, @RequestBody PlanRequestDto requestDto, HttpServletRequest request) {
         Long userId = getUserIdFromRequest(request);

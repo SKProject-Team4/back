@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "plans")
@@ -20,13 +21,13 @@ public class Plan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = true, length = 255)
     private String title;
 
-    @Column(name = "start_time", nullable = false)
+    @Column(name = "start_time", nullable = true)
     private LocalDateTime start;
 
-    @Column(name = "end_time", nullable = false)
+    @Column(name = "end_time", nullable = true)
     private LocalDateTime end;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -37,6 +38,10 @@ public class Plan {
 
     @OneToOne(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private PlanDetail planDetail;
+
+    @Column(unique = true, nullable = true, length = 36)
+    private String guestKey;
+
 
     public void setPlanDetail(PlanDetail planDetail) {
         this.planDetail = planDetail;

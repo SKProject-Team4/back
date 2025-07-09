@@ -52,10 +52,31 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/users/register").permitAll()
-                        .requestMatchers("/api/users/login").permitAll()
-                        .requestMatchers("/plans").permitAll()
+                        // 1. 사용자 등록 및 로그인 경로는 모두 허용
+                        .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+
+                        // ** 추가 ** 임시 계획 시작 (게스트 키 발급)
+                        .requestMatchers("/plans/start").permitAll()
+
+                        // ** 변경 ** 일정 저장/업데이트 (guestKey 또는 userId 기반)
+                        .requestMatchers("/plans/save").permitAll() // 게스트도 접근해야 하므로 permitAll
+
+                        // 3. JPG/PDF 파일 내보내기 엔드포인트는 모두 접근 허용 (게스트/회원 공용)
+                        .requestMatchers("/plans/export/**").permitAll()
+
+                        // 4. 그 외 모든 "/plans/**" 경로 (조회, 수정, 삭제)는 로그인한 사용자(인증된 사용자)만 접근 허용
+                        //    (이전의 "/plans/create" 제외)
+                        .requestMatchers("/plans/**").authenticated()
+
+                        // 5. 위에 명시되지 않은 다른 모든 요청은 인증 필요   7.8 새벽 수정
                         .anyRequest().authenticated());
+
+//        http
+//                .authorizeHttpRequests((auth) -> auth
+//                        .requestMatchers("/api/users/register").permitAll()
+//                        .requestMatchers("/api/users/login").permitAll()
+//                        .requestMatchers("/plans").permitAll()
+//                        .anyRequest().authenticated());
 
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, redisUtil), UsernamePasswordAuthenticationFilter.class);

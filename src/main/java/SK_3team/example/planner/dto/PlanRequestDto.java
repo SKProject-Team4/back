@@ -16,4 +16,5 @@ public class PlanRequestDto {
     private LocalDateTime start;
     private LocalDateTime end;
     private String aiChatContent;
+    private String chatId;
 }

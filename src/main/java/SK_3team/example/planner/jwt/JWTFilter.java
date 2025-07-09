@@ -29,11 +29,18 @@ public class JWTFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
 
         // 토큰 잘 불러와지나 체크
-        System.out.println(authorization);
+        System.out.println("JWTFilter:  " +
+                authorization);
 
         // 여기서 token 필요없는 기능들 다 제끼면 될듯
         // 회원가입, 로그인 요청은 인증없이 통과
-        if (requestURI.equals("/api/users/register") || requestURI.equals("/api/users/login") || requestURI.equals("/api/users/logincheck")){
+        if (requestURI.equals("/api/users/register") ||
+        requestURI.equals("/api/users/login") ||
+        requestURI.equals("/api/users/logincheck") ||
+        requestURI.equals("/plans/start") ||
+        requestURI.equals("/plans/save") ||
+                requestURI.startsWith("/plans/export/")
+        ) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -60,9 +67,9 @@ public class JWTFilter extends OncePerRequestFilter {
 
         // redis에서 데이터 가져오기
         String username = jwtUtil.getUsername(token);
-        String storedToken = redisUtil.getData("access:" + username);
+        String storedUsername = redisUtil.getData(token);
 
-        if (storedToken == null || !storedToken.equals(token)) {
+        if (storedUsername == null || !storedUsername.equals(username)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"message\": \"유효하지 않은 토큰입니다.\"}");
             return;
@@ -91,6 +98,5 @@ public class JWTFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
-
     }
 }

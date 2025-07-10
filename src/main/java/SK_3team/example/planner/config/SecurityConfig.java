@@ -55,7 +55,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests((auth) -> auth
                         // 1. 사용자 등록 및 로그인 경로는 모두 허용
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
-
                         // ** 추가 ** 임시 계획 시작 (게스트 키 발급)
                         .requestMatchers("/plans/start").permitAll()
 

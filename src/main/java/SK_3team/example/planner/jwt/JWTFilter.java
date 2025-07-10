@@ -31,9 +31,24 @@ public class JWTFilter extends OncePerRequestFilter {
         // 토큰 잘 불러와지나 체크
         System.out.println(authorization);
 
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json; charset=UTF-8");
+
         // 여기서 token 필요없는 기능들 다 제끼면 될듯
         // 회원가입, 로그인 요청은 인증없이 통과
-        if (requestURI.equals("/api/users/register") || requestURI.equals("/api/users/login") || requestURI.equals("/api/users/logincheck")){
+        if (requestURI.equals("/api/users/register") ||
+                requestURI.equals("/api/users/login")||
+//                requestURI.equals("/api/users/logincheck") ||
+                 requestURI.equals("/plans/start")||        // 게스트 키 발급
+                 requestURI.equals("/plans/save") // 게스트/회원 일정 생성 및 저장
+//                requestURI.equals("/plans/get_plans") ||
+//                requestURI.equals("/plans/get_plans_by_date") || //특정날짜일정목록조회
+//                requestURI.equals("/plans/get_detail_plans")  || //단일일정상세정보조회
+//                requestURI.equals("/plans/update/{id}") ||
+//                requestURI.equals("/plans/delete/{id}") ||
+//                requestURI.equals("/plans/**") ||
+//                requestURI.startsWith("/plans/export/")    // JPG/PDF 내보내기 (새로운 경로 접두사)
+        ) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -60,9 +75,9 @@ public class JWTFilter extends OncePerRequestFilter {
 
         // redis에서 데이터 가져오기
         String username = jwtUtil.getUsername(token);
-        String storedToken = redisUtil.getData("access:" + username);
+        String storedUsername = redisUtil.getData(token);
 
-        if (storedToken == null || !storedToken.equals(token)) {
+        if (storedUsername == null || !storedUsername.equals(username)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"message\": \"유효하지 않은 토큰입니다.\"}");
             return;

@@ -30,6 +30,8 @@ public class LoginCheckFilter implements Filter {
             String authHeader = request.getHeader("Authorization");
             String token = null;
 
+            System.out.println("LoginCheckFilter: " + authHeader);
+
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
             }
@@ -38,15 +40,31 @@ public class LoginCheckFilter implements Filter {
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
 
-            if (token != null && redisUtil.hasKey(token)) {
-                out.write("{\"status\": \"users\"}");
+            if (token != null) {
+                try {
+                    String JWTusername = jwtUtil.getUsername(token);
+                    String storedUsername = redisUtil.getData(token); // token을 key로 조회
+
+                    if (storedUsername != null && storedUsername.equals(JWTusername)) {
+                        out.write("{\"status\": \"users\"}");
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        out.write("{\"status\": \"Guest\"}");
+                    }
+
+                } catch (Exception e) {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    out.write("{\"status\": \"Guest\"}");
+                }
             } else {
                 response.setStatus(HttpServletResponse.SC_OK);
                 out.write("{\"status\": \"Guest\"}");
             }
+
             return;
         }
 
+        // logincheck 요청이 아니면 다음 필터로 넘김
         filterChain.doFilter(servletRequest, servletResponse);
     }
 }

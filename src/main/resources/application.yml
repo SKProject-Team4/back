@@ -1,11 +1,11 @@
 server:
-  port: 8080
+  port: 8099
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/planner_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: maria
+    url: jdbc:mysql://localhost:3306/db_planner?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: user_woogi
+    password: 1234
 
   jwt:
     secret: "A7dk@Z!pP9rXqLm3#sWvTjE2bNcY$uKd"

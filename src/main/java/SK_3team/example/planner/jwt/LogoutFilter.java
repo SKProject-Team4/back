@@ -42,6 +42,8 @@ public class LogoutFilter extends OncePerRequestFilter {
         }
 
         long expire = jwtUtil.extractAllClaims(token).getExpiration().getTime() - System.currentTimeMillis();
+
+        redisUtil.deleteData(token);
         redisUtil.setBlackList(token, expire);
 
         response.setCharacterEncoding("UTF-8");

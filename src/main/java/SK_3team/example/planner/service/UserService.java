@@ -18,11 +18,15 @@ public class UserService {
 
 
     public void save(UserDTO userDTO) {
+        String result = emailCheck(userDTO.getEmail());
+        if (result == null) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(userDTO.getUsername());
         userEntity.setEmail(userDTO.getEmail());
-        userEntity.setRole(userDTO.getRole());
-
+        userEntity.setRole(userDTO.getRole() != null ? userDTO.getRole() : "ROLE_USER");
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDTO.getPassword()));
 
         userRepository.save(userEntity);

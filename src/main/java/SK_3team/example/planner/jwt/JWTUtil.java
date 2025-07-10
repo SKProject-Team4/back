@@ -57,6 +57,7 @@ public class JWTUtil {
         System.out.println("JWT Issued At: " + issuedAt);
         System.out.println("JWT Expiration: " + expiration);
         System.out.println("JWT Validity (ms): " + expiredMs);
+        System.out.println("Role passed to createJwt: " + role);
 
         return Jwts.builder()
                 .claim("username", username)

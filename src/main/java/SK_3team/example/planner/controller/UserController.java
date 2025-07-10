@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    // username + password 방식을
+    // email + password 방식으로 변환
 
     private final UserService userService;
-    private final RedisUtil redisUtil;
-    private final JWTUtil jwtUtil;
 
     @GetMapping("/")
     public String mainPage(){

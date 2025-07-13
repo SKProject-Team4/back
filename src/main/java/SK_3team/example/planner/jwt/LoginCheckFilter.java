@@ -26,7 +26,7 @@ public class LoginCheckFilter implements Filter {
 
         String path = request.getRequestURI();
 
-        if (path.equals("/api/users/logincheck")) {
+        if (path.matches(".*/api/users/logincheck$")){
             String authHeader = request.getHeader("Authorization");
             String token = null;
 

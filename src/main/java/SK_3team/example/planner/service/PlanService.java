@@ -127,9 +127,9 @@ public class PlanService {
         }
         planDetail.setAiChatContent(requestDto.getAiChatContent());
         // planDetail에 chatId 필드가 있다면 추가 (PlanRequestDto에 chatId가 있어야 함)
-        // if (requestDto.getChatId() != null) {
-        //     planDetail.setChatId(requestDto.getChatId());
-        // }
+         if (requestDto.getChatId() != null) {
+             planDetail.setChatId(requestDto.getChatId());
+         }
 
         Plan savedPlan = planRepository.save(plan);
         return convertToPlanResponseDto(savedPlan);
@@ -154,9 +154,9 @@ public class PlanService {
         }
         planDetail.setAiChatContent(requestDto.getAiChatContent());
         // planDetail에 chatId 필드가 있다면 추가 (PlanRequestDto에 chatId가 있어야 함)
-        // if (requestDto.getChatId() != null) {
-        //     planDetail.setChatId(requestDto.getChatId());
-        // }
+         if (requestDto.getChatId() != null) {
+             planDetail.setChatId(requestDto.getChatId());
+         }
 
         Plan updatedPlan = planRepository.save(plan);
         return convertToPlanResponseDto(updatedPlan);

@@ -34,7 +34,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
             Map<String, String> creds = new ObjectMapper().readValue(request.getInputStream(), Map.class);
-
+            System.out.println(creds);
             String username = creds.get("username");
             String password = creds.get("password");
 

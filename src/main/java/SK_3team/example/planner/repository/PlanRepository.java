@@ -16,7 +16,6 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
     // 특정 userId에 해당하는 모든 일정을 찾기
     List<Plan> findByUserId(Long userId);
 
-
     // 특정 userId와 날짜 범위에 해당하는 일정을 찾기(캘린더 날짜 클릭 시)
     List<Plan> findByUserIdAndStartBetween(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
 
@@ -28,6 +27,5 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
 
     // 게스트 키와 userId가 NULL인 일정을 찾는 메서드 (게스트 전용 일정 확인용)
     Optional<Plan> findByGuestKeyAndUserIdIsNull(String guestKey);
-
 
 }

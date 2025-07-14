@@ -40,6 +40,7 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 <details> <summary><strong>📄 접기/펼치기</strong></summary>
 
 🔹 Back-End
+
 항목	내용
 
 * 언어	Java 17
@@ -113,6 +114,8 @@ spring:
 
 ## 🗂️ 5. 백엔드 프로젝트 구조
 
+<details> <summary><strong>📄 접기/펼치기</strong></summary>
+
 ```
 SK_3team.example.planner/
 ├── config/                    # 애플리케이션 전역 설정
@@ -154,7 +157,9 @@ SK_3team.example.planner/
 │   └── UserService.java
 ├── PlannerApplication.java    # 스프링 부트 메인 클래스
 
+
 ```
+</details>
 
 
 

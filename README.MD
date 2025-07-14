@@ -96,77 +96,45 @@ spring:
 
 ## 🗂️ 5. 백엔드 프로젝트 구조
 
-<details> <summary><strong>📁 디렉토리 트리 보기</strong></summary>
-
 SK_3team.example.planner/
-├── config/                    # 전역 설정
-│   ├── RedisConfig.java       # Redis 설정
-│   └── SecurityConfig.java    # Spring Security 설정
-
-├── controller/                # REST API 컨트롤러
-│   ├── PlanController.java    # 일정 관련 API
-│   └── UserController.java    # 사용자 관련 API
-
+├── config/                    # 애플리케이션 전역 설정
+│   ├── RedisConfig.java
+│   └── SecurityConfig.java
+├── controller/                # REST API 엔드포인트
+│   ├── PlanController.java
+│   └── UserController.java
 ├── dto/                       # DTO (데이터 전송 객체)
-│   ├── mapper/
-│   │   └── CustomUserDetails.java
+│   ├── CustomUserDetails.java
 │   ├── ErrorResponseDto.java
 │   ├── PlanDetailResponseDto.java
 │   ├── PlanRequestDto.java
 │   ├── PlanResponseDto.java
 │   └── UserDTO.java
-
 ├── entity/                    # JPA 엔티티
 │   ├── Plan.java
 │   ├── PlanDetail.java
 │   └── UserEntity.java
-
 ├── exception/                 # 예외 처리
 │   ├── advice/
 │   ├── AuthException.java
 │   ├── GlobalExceptionHandler.java
 │   ├── PlanNotFoundException.java
 │   └── ResourceNotFoundException.java
-
-├── jwt/                       # JWT 인증 관련
+├── jwt/                       # JWT 필터 및 유틸
 │   ├── JWTFilter.java
 │   ├── JWTUtil.java
 │   ├── LoginCheckFilter.java
-│   ├── LoginFilter.java
-│   └── LogoutFilter.java
-
+│   └── LoginFilter.java
 ├── redis/
-│   └── RedisUtil.java         # Redis 유틸리티
-
-├── repository/                # 데이터 접근 계층
+│   └── RedisUtil.java
+├── repository/                # JPA 레포지토리
 │   ├── PlanRepository.java
 │   └── UserRepository.java
-
-├── service/                   # 비즈니스 로직
+├── service/                   # 서비스 레이어
 │   ├── CustomUserDetailsService.java
 │   ├── PlanService.java
-│   ├── UserService.java
-│   └── img.png                # ⚠️ 이미지 파일 (이동 권장)
-
-├── PlannerApplication.java    # Spring Boot 메인 클래스
-plaintext
-복사
-편집
-resources/
-└── application.yml            # 애플리케이션 설정 (DB, JWT 등)
-plaintext
-복사
-편집
-루트 디렉토리 구성
-├── .gitignore
-├── .gitattributes
-├── pom.xml
-├── mvnw / mvnw.cmd
-├── target/                    # 빌드 결과물
-├── test/                      # 테스트 코드
-├── use/                      # ⚠️ 용도 미정 (정리 필요)
-└── README.md
-</details>
+│   └── UserService.java
+├── PlannerApplication.java    # 스프링 부트 메인 클래스
 
 
 

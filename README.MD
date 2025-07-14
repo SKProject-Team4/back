@@ -77,9 +77,9 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 
 #5. planner_db 사용자 계정 접속
 
-mysql -u root -p
-use planner_db 입력
-MariaDB [(mysql)] use planner_db;
+* mysql -u root -p
+* use planner_db 입력
+* MariaDB [(mysql)] use planner_db;
 
 ### ✅ 4.2. application.yml 설정
 spring:
@@ -94,65 +94,79 @@ spring:
 
 ----
 
-🗂️ 5. 백엔드 프로젝트 구조
+## 🗂️ 5. 백엔드 프로젝트 구조
+
+<details> <summary><strong>📁 디렉토리 트리 보기</strong></summary>
 
 SK_3team.example.planner/
-├── .idea/                           # IntelliJ IDEA 프로젝트 설정 파일 (IDE 관련)
-├── .mvn/                            # Maven Wrapper 관련 파일
-│   └── wrapper/
-│       └── maven-wrapper.properties
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── SK_3team.example.planner/
-│   │   │       ├── config/              # 애플리케이션 전반의 설정 클래스
-│   │   │       │   ├── RedisConfig      # Redis 관련 설정
-│   │   │       │   └── SecurityConfig   # Spring Security 설정
-│   │   │       ├── controller/          # REST API 엔드포인트 정의
-│   │   │       │   ├── PlanController   # 일정 관련 API 처리
-│   │   │       │   └── UserController   # 사용자 관련 API 처리
-│   │   │       ├── dto/                 # 클라이언트와 주고받는 데이터 전송 객체 (DTO)
-│   │   │       │   ├── mapper           # DTO와 엔티티 간 변환 (매퍼)
-│   │   │       │   ├── CustomUserDetails
-│   │   │       │   ├── ErrorResponseDto
-│   │   │       │   ├── PlanDetailResponseDto # 일정 상세 조회 응답 DTO
-│   │   │       │   ├── PlanRequestDto   # 일정 생성/수정 요청 DTO
-│   │   │       │   ├── PlanResponseDto  # 일정 조회 응답 DTO
-│   │   │       │   └── UserDTO
-│   │   │       ├── entity/              # JPA 엔티티 클래스 (데이터베이스 테이블 매핑)
-│   │   │       │   ├── Plan             # 핵심 일정 정보
-│   │   │       │   ├── PlanDetail       # 일정 상세 정보 (AI 채팅 내용, chat_id 등)
-│   │   │       │   └── UserEntity       # 사용자 정보
-│   │   │       ├── exception/           # 커스텀 예외 및 전역 예외 처리
-│   │   │       │   ├── advice/          # 예외 핸들러 어드바이스
-│   │   │       │   ├── AuthException
-│   │   │       │   ├── GlobalExceptionHandler
-│   │   │       │   ├── PlanNotFoundException
-│   │   │       │   └── ResourceNotFoundException
-│   │   │       ├── jwt/                 # JWT(JSON Web Token) 관련 유틸리티 및 필터
-│   │   │       │   ├── JWTFilter        # JWT 인증 필터
-│   │   │       │   ├── JWTUtil          # JWT 토큰 생성, 검증 유틸
-│   │   │       │   ├── LoginCheckFilter
-│   │   │       │   └── LoginFilter
-│   │   │       ├── redis/               # Redis 관련 유틸리티
-│   │   │       │   └── RedisUtil
-│   │   │       ├── repository/          # JPA Repository 인터페이스 (DB 접근)
-│   │   │       │   ├── PlanRepository   # Plan 엔티티 관련 DB 접근
-│   │   │       │   └── UserRepository   # User 엔티티 관련 DB 접근
-│   │   │       ├── service/             # 비즈니스 로직 처리
-│   │   │       │   ├── CustomUserDetailsService # 사용자 인증 서비스
-│   │   │       │   ├── PlanService      # 일정 관련 비즈니스 로직
-│   │   │       │   └── UserService      # 사용자 관련 비즈니스 로직
-│   │   │       └── PlannerApplication.java # Spring Boot 메인 애플리케이션 클래스
-│   │   └── resources/           # 애플리케이션 리소스 파일
-│   │       └── application.yml  # Spring Boot 설정 파일 (DB 연결, JWT Secret 등)
-│   └── test/                    # 테스트 코드 (JUnit 등)
-├── target/                      # 빌드 결과물 (컴파일된 클래스, .jar 파일 등)
+├── config/                    # 전역 설정
+│   ├── RedisConfig.java       # Redis 설정
+│   └── SecurityConfig.java    # Spring Security 설정
+
+├── controller/                # REST API 컨트롤러
+│   ├── PlanController.java    # 일정 관련 API
+│   └── UserController.java    # 사용자 관련 API
+
+├── dto/                       # DTO (데이터 전송 객체)
+│   ├── mapper/
+│   │   └── CustomUserDetails.java
+│   ├── ErrorResponseDto.java
+│   ├── PlanDetailResponseDto.java
+│   ├── PlanRequestDto.java
+│   ├── PlanResponseDto.java
+│   └── UserDTO.java
+
+├── entity/                    # JPA 엔티티
+│   ├── Plan.java
+│   ├── PlanDetail.java
+│   └── UserEntity.java
+
+├── exception/                 # 예외 처리
+│   ├── advice/
+│   ├── AuthException.java
+│   ├── GlobalExceptionHandler.java
+│   ├── PlanNotFoundException.java
+│   └── ResourceNotFoundException.java
+
+├── jwt/                       # JWT 인증 관련
+│   ├── JWTFilter.java
+│   ├── JWTUtil.java
+│   ├── LoginCheckFilter.java
+│   ├── LoginFilter.java
+│   └── LogoutFilter.java
+
+├── redis/
+│   └── RedisUtil.java         # Redis 유틸리티
+
+├── repository/                # 데이터 접근 계층
+│   ├── PlanRepository.java
+│   └── UserRepository.java
+
+├── service/                   # 비즈니스 로직
+│   ├── CustomUserDetailsService.java
+│   ├── PlanService.java
+│   ├── UserService.java
+│   └── img.png                # ⚠️ 이미지 파일 (이동 권장)
+
+├── PlannerApplication.java    # Spring Boot 메인 클래스
+plaintext
+복사
+편집
+resources/
+└── application.yml            # 애플리케이션 설정 (DB, JWT 등)
+plaintext
+복사
+편집
+루트 디렉토리 구성
+├── .gitignore
 ├── .gitattributes
-├── .gitignore                   # Git 버전 관리에서 제외할 파일 목록
-├── mvnw                         # Maven Wrapper 스크립트 (Linux/macOS)
-├── mvnw.cmd                     # Maven Wrapper 스크립트 (Windows)
-└── pom.xml                      # Maven 프로젝트 설정 파일 (의존성, 빌드 설정 등)
+├── pom.xml
+├── mvnw / mvnw.cmd
+├── target/                    # 빌드 결과물
+├── test/                      # 테스트 코드
+├── use/                      # ⚠️ 용도 미정 (정리 필요)
+└── README.md
+</details>
 
 
 

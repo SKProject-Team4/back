@@ -39,9 +39,7 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 
 <details> <summary><strong>📄 접기/펼치기</strong></summary>
 
-🔹 Back-End
-
-항목	내용
+🔹 Back-End / 항목 내용
 
 * 언어	Java 17
 * 프레임워크 Spring Boot 3.x

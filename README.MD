@@ -65,7 +65,7 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 
 ## 🧾 4. 백엔드 실행 방법
 
-### ✅ 4.1. MYSQL(MariaDB) 설정
+### ✅ 4.1. MYSQL 설정
 
 <details> <summary><strong>📄 접기/펼치기</strong></summary>
 

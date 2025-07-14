@@ -96,6 +96,7 @@ spring:
 
 ## 🗂️ 5. 백엔드 프로젝트 구조
 
+```
 SK_3team.example.planner/
 ├── config/                    # 애플리케이션 전역 설정
 │   ├── RedisConfig.java
@@ -136,6 +137,7 @@ SK_3team.example.planner/
 │   └── UserService.java
 ├── PlannerApplication.java    # 스프링 부트 메인 클래스
 
+```
 
 
 

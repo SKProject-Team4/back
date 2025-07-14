@@ -99,14 +99,14 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 <details> <summary><strong>📄 접기/펼치기</strong></summary>
 
 * spring:
-  datasource:
-    url: jdbc:mariadb://localhost:3306/planner_db
-    username: {사용자이름}         # 예: planner
-    password: {비밀번호}           # 예: planner123
+  * datasource:
+    * url: jdbc:mariadb://localhost:3306/planner_db
+    * username: {사용자이름}         # 예: planner
+    * password: {비밀번호}           # 예: planner123
 * jpa:
-    hibernate:
-      ddl-auto: update             # 개발 시에는 'update', 운영 시에는 'none' 권장
-    show-sql: true                 # 콘솔에 SQL 쿼리 출력
+    * hibernate:
+      * ddl-auto: update             # 개발 시에는 'update', 운영 시에는 'none' 권장
+    * show-sql: true                 # 콘솔에 SQL 쿼리 출력
 </details>
 
 ----

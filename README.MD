@@ -35,23 +35,23 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 🔹 Back-End
 항목	내용
 
-언어	Java 17
-프레임워크 Spring Boot 3.x
-ORM	Spring Data JPA
-보안	Spring Security + JWT
-API 통신	RestTemplate
-빌드 도구	Maven
-DB	MySQL (MariaDB)
-캐시	Redis
-환경 변수	dotenv (.env 파일 사용)
+*언어	Java 17
+*프레임워크 Spring Boot 3.x
+*ORM Spring Data JPA
+*보안 Spring Security + JWT
+*API 통신 RestTemplate
+*빌드 도구 Maven
+*DB	MySQL (MariaDB)
+*캐시 Redis
+*환경 변수 dotenv (.env 파일 사용)
 
 🔹 DevOps / 협업 도구
-형상 관리: GitHub
-문서화: Notion, Google Docs
-API 테스트: Postman
-컨테이너: Docker, Kubernetes
-모니터링: Redis
-AI 도구 참고: ChatGPT, Deepseek, Google Gemini
+*형상 관리: GitHub
+*문서화: Notion, Google Docs
+*API 테스트: Postman
+*컨테이너: Docker, Kubernetes
+*모니터링: Redis
+*AI 도구 참고: ChatGPT, Deepseek, Google Gemini
 
 ---
 

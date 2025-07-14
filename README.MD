@@ -11,6 +11,8 @@ AI 여행 플래너는 사용자가 AI 추천을 통해 여행 일정을 손쉽�
 
 ## 🚀 2. 주요 기능
 
+<details> <summary><strong>📄 접기/펼치기</strong></summary>
+
 ### ✅ AI 기반 일정 추천
 AI가 날짜에 맞는 여행지 및 활동을 추천
 채팅 기반 인터페이스 제공
@@ -29,9 +31,14 @@ JWT 기반 인증 시스템
 ### ✅ 일정 내보내기 
 JPG 또는 PDF 형식으로 일정 내보내기 가능
 
+</details>
+
 ---
 
 ## 🛠️ 3. 기술 스택
+
+<details> <summary><strong>📄 접기/펼치기</strong></summary>
+
 🔹 Back-End
 항목	내용
 
@@ -53,11 +60,15 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 * 모니터링: Redis
 * AI 도구 참고: ChatGPT, Deepseek, Google Gemini
 
+</details> 
+
 ---
 
 ## 🧾 4. 백엔드 실행 방법
 
 ### ✅ 4.1. MYSQL(MariaDB) 설정
+
+<details> <summary><strong>📄 접기/펼치기</strong></summary>
 
 #1. mariaDB 접속
 * mysql-u root -p
@@ -81,6 +92,9 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 * use planner_db 입력
 * MariaDB [(mysql)] use planner_db;
 
+</details>
+
+
 ### ✅ 4.2. application.yml 설정
 
 <details> <summary><strong>📄 접기/펼치기</strong></summary>
@@ -94,6 +108,7 @@ spring:
       ddl-auto: update             # 개발 시에는 'update', 운영 시에는 'none' 권장
     show-sql: true                 # 콘솔에 SQL 쿼리 출력
 </details>
+
 ----
 
 ## 🗂️ 5. 백엔드 프로젝트 구조

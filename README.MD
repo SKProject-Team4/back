@@ -91,7 +91,7 @@ spring:
         ddl-auto: update
     show-sql: true
 
----
+----
 
 🗂️ 5. 백엔드 프로젝트 구조
 

@@ -60,20 +60,20 @@ JPG 또는 PDF 형식으로 일정 내보내기 가능
 ### ✅ 4.1. MYSQL(MariaDB) 설정
 
 #1. mariaDB 접속
-mysql-u root -p
+* mysql-u root -p
 
 #2. 비번 입력 후 데이터베이스 보기
-MariaDB [(none)]> show databases;
+* MariaDB [(none)]> show databases;
 
 #3. 목록에 mysql이 있다면 선택
-MariaDB [(none)]> use mysql;
+* MariaDB [(none)]> use mysql;
 
 #4. planner_db 생성 및 설정
-MariaDB [(mysql)]CREATE DATABASE planner_db;
-MariaDB [(mysql)]CREATE USER 'planner'@'%' IDENTIFIED BY 'planner';
-MariaDB [(mysql)]GRANT ALL PRIVILEGES ON planner_db.* TO 'planner'@'%';
-MariaDB [(mysql)]FLUSH PRIVILEGES;
-MariaDB [(mysql)]EXIT;
+* MariaDB [(mysql)]CREATE DATABASE planner_db;
+* MariaDB [(mysql)]CREATE USER 'planner'@'%' IDENTIFIED BY 'planner';
+* MariaDB [(mysql)]GRANT ALL PRIVILEGES ON planner_db.* TO 'planner'@'%';
+* MariaDB [(mysql)]FLUSH PRIVILEGES;
+* MariaDB [(mysql)]EXIT;
 
 #5. planner_db 사용자 계정 접속
 

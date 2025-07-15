@@ -12,7 +12,7 @@ spring:
 
   redis:
     host: 219.255.15.170
-    port: 6383
+    port: 6379
     timeout: 60000
 
   jpa:
